@@ -23,7 +23,7 @@ $this->menu=array(
 );
 ?>
 
-<h1>View <?php echo $this->modelClass." #<?php echo \$model->{$this->tableSchema->primaryKey}; ?>"; ?></h1>
+<h2>View <?php echo $this->modelClass." #<?php echo \$model->{$this->tableSchema->primaryKey}; ?>"; ?></h2>
 
 <?php echo "<?php"; ?> $this->widget('bootstrap.widgets.TbDetailView',array(
 	'data'=>$model,

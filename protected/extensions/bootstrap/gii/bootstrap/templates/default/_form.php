@@ -6,7 +6,8 @@
 ?>
 <?php echo "<?php \$form=\$this->beginWidget('bootstrap.widgets.TbActiveForm',array(
 	'id'=>'".$this->class2id($this->modelClass)."-form',
-	'enableAjaxValidation'=>false,
+	'enableAjaxValidation'=>true,
+        'htmlOptions' => array('enctype' => 'multipart/form-data'),
 )); ?>\n"; ?>
 
 	<p class="help-block">Fields with <span class="required">*</span> are required.</p>

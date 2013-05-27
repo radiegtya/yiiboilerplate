@@ -32,23 +32,7 @@ class <?php echo $this->controllerClass; ?> extends <?php echo $this->baseContro
 	 */
 	public function accessRules()
 	{
-		return array(
-			array('allow',  // allow all users to perform 'index' and 'view' actions
-				'actions'=>array('index','view'),
-				'users'=>array('*'),
-			),
-			array('allow', // allow authenticated user to perform 'create' and 'update' actions
-				'actions'=>array('create','update'),
-				'users'=>array('@'),
-			),
-			array('allow', // allow admin user to perform 'admin' and 'delete' actions
-				'actions'=>array('admin','delete'),
-				'users'=>array('admin'),
-			),
-			array('deny',  // deny all users
-				'users'=>array('*'),
-			),
-		);
+        return VAuth::getAccessRules('<?php echo $this->class2id($this->modelClass); ?>', array(''));
 	}
 
 	/**
@@ -71,13 +55,22 @@ class <?php echo $this->controllerClass; ?> extends <?php echo $this->baseContro
 		$model=new <?php echo $this->modelClass; ?>;
 
 		// Uncomment the following line if AJAX validation is needed
-		// $this->performAjaxValidation($model);
+		$this->performAjaxValidation($model);
 
 		if(isset($_POST['<?php echo $this->modelClass; ?>']))
 		{
 			$model->attributes=$_POST['<?php echo $this->modelClass; ?>'];
-			if($model->save())
-				$this->redirect(array('view','id'=>$model-><?php echo $this->tableSchema->primaryKey; ?>));
+                        
+                        //upload image
+                        $VUpload = new VUpload();
+                        $VUpload->path = 'images/<?php echo $this->class2id($this->modelClass); ?>/';
+                        $VUpload->doUpload($model, 'image');
+                        
+			if($model->save()){
+                                Yii::app()->user->setFlash('success', 'Data successfully created');                                
+				//$this->redirect(array('view','id'=>$model-><?php echo $this->tableSchema->primaryKey; ?>));
+                                $this->redirect(array('admin'));
+                        }      
 		}
 
 		$this->render('create',array(
@@ -95,13 +88,25 @@ class <?php echo $this->controllerClass; ?> extends <?php echo $this->baseContro
 		$model=$this->loadModel($id);
 
 		// Uncomment the following line if AJAX validation is needed
-		// $this->performAjaxValidation($model);
+		$this->performAjaxValidation($model);
 
 		if(isset($_POST['<?php echo $this->modelClass; ?>']))
 		{
 			$model->attributes=$_POST['<?php echo $this->modelClass; ?>'];
-			if($model->save())
-				$this->redirect(array('view','id'=>$model-><?php echo $this->tableSchema->primaryKey; ?>));
+                        
+                        //upload file
+                        $VUpload = new VUpload();
+                        $VUpload->path = 'images/<?php echo $this->class2id($this->modelClass); ?>/';
+                        $VUpload->doUpload($model, 'image');
+                        if (!$model->image) { //if there is no image input
+                            $model->image = <?php echo $this->modelClass; ?>::model()->findByPk($id)->image;
+                        }
+                        
+			if($model->save()){
+                                Yii::app()->user->setFlash('success', 'Data successfully updated');
+				//$this->redirect(array('view','id'=>$model-><?php echo $this->tableSchema->primaryKey; ?>));
+                                $this->redirect(array('admin'));
+                        }        
 		}
 
 		$this->render('update',array(
@@ -118,8 +123,12 @@ class <?php echo $this->controllerClass; ?> extends <?php echo $this->baseContro
 	{
 		if(Yii::app()->request->isPostRequest)
 		{
-			// we only allow deletion via POST request
-			$this->loadModel($id)->delete();
+			// we only allow deletion via POST request			
+                        $model = $this->loadModel($id);
+                        $VUpload = new VUpload();
+                        $VUpload->path = 'images/<?php echo $this->class2id($this->modelClass); ?>/';
+                        $VUpload->doDelete($model, 'image');
+                        $model->delete();
 
 			// if AJAX request (triggered by deletion via admin grid view), we should not redirect the browser
 			if(!isset($_GET['ajax']))
@@ -172,7 +181,7 @@ class <?php echo $this->controllerClass; ?> extends <?php echo $this->baseContro
 	 * Performs the AJAX validation.
 	 * @param CModel the model to be validated
 	 */
-	protected function performAjaxValidation($model)
+	protected function performAjaxValidation($model, $formId = '<?php echo $this->class2id($this->modelClass); ?>-form')
 	{
 		if(isset($_POST['ajax']) && $_POST['ajax']==='<?php echo $this->class2id($this->modelClass); ?>-form')
 		{
@@ -180,4 +189,16 @@ class <?php echo $this->controllerClass; ?> extends <?php echo $this->baseContro
 			Yii::app()->end();
 		}
 	}
+        
+        public function sendEmail() {
+            $to1 = 'yourmail@host';            
+
+            $message = $this->renderPartial('/<?php echo $this->class2id($this->modelClass); ?>/sendEmail', array(''), true);
+            $subject = '=?UTF-8?B?' . base64_encode('<?php echo Yii::app()->name;?>') . '?=';
+            $headers = 'From: $to1 <vlocorp>' . "\r\n";
+            $headers .= 'MIME-Version: 1.0' . "\r\n";
+            $headers .= 'Content-type: text/html; charset=iso-8859-1' . "\r\n";
+
+            mail("<$to1>", $subject, $message, $headers);
+    }
 }
